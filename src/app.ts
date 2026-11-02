@@ -123,9 +123,16 @@ function getObjectId(value: string) {
   return new mongoose.Types.ObjectId(value);
 }
 
+function getRouteParam(value: string | string[] | undefined) {
+  if (typeof value !== "string") {
+    throw new HttpError(400, "Invalid resource ID");
+  }
+  return value;
+}
+
 function bookResponse(book: Record<string, unknown> | { toObject(): object }) {
   const record =
-    "toObject" in book
+    "toObject" in book && typeof book.toObject === "function"
       ? book.toObject()
       : book;
   const { _id, __v: _version, ...fields } = record as Record<string, unknown>;
@@ -136,7 +143,7 @@ function borrowResponse(
   borrow: Record<string, unknown> | { toObject(): object },
 ) {
   const record =
-    "toObject" in borrow
+    "toObject" in borrow && typeof borrow.toObject === "function"
       ? borrow.toObject()
       : borrow;
   const {
@@ -203,7 +210,9 @@ export function createApp(
   app.get(
     "/books/:id",
     asyncHandler(async (request, response) => {
-      const book = await Book.findById(getObjectId(request.params.id));
+      const book = await Book.findById(
+        getObjectId(getRouteParam(request.params.id)),
+      );
       if (!book) throw new HttpError(404, "Book not found");
       response.status(200).json(bookResponse(book));
     }),
@@ -233,7 +242,7 @@ export function createApp(
     asyncHandler(async (request, response) => {
       const patch = bookPatchSchema.parse(request.body);
       const user = getUser(response);
-      const bookId = getObjectId(request.params.id);
+      const bookId = getObjectId(getRouteParam(request.params.id));
       const updated = await inTransaction(async (session) => {
         const current = await Book.findOne({
           _id: bookId,
@@ -276,7 +285,7 @@ export function createApp(
     requireFrontendOrigin,
     asyncHandler(async (request, response) => {
       const user = getUser(response);
-      const bookId = getObjectId(request.params.id);
+      const bookId = getObjectId(getRouteParam(request.params.id));
       await inTransaction(async (session) => {
         const book = await Book.findOne({
           _id: bookId,
@@ -363,7 +372,7 @@ export function createApp(
     requireFrontendOrigin,
     asyncHandler(async (request, response) => {
       const user = getUser(response);
-      const borrowId = getObjectId(request.params.id);
+      const borrowId = getObjectId(getRouteParam(request.params.id));
       await inTransaction(async (session) => {
         const borrow = await Borrow.findOneAndUpdate(
           {

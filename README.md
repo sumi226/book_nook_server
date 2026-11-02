@@ -6,9 +6,10 @@ against the same MongoDB database as the identity provider.
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and set `MONGODB_URI`, `MONGODB_DB`,
+1. Create a local `.env` file and set `MONGODB_URI`, `MONGODB_DB`,
    `BETTER_AUTH_JWKS_URL`, `BETTER_AUTH_ISSUER`, `BETTER_AUTH_AUDIENCE`, and
-   `FRONTEND_ORIGIN`.
+   `FRONTEND_ORIGIN`. `PORT` defaults to `4000`; `NODE_ENV` defaults to
+   `development`.
 2. Configure the client/Better Auth application to use the same MongoDB
    database. Set `BETTER_AUTH_JWKS_URL` to its JWKS endpoint and set
    `BETTER_AUTH_ISSUER` and `BETTER_AUTH_AUDIENCE` to match its auth URL
@@ -21,6 +22,24 @@ against the same MongoDB database as the identity provider.
 
 MongoDB transactions require a replica set; MongoDB Atlas supports this. The
 test suite runs against an ephemeral single-node replica set.
+
+## Deploy to Vercel
+
+Import this folder as its own Vercel project and keep the Root Directory set to
+the server project. Vercel serves the API as serverless functions; do not deploy
+the local `.env` file. Add these variables in the Vercel project settings:
+
+- `MONGODB_URI` and `MONGODB_DB`
+- `BETTER_AUTH_JWKS_URL` — the client URL plus `/api/auth/jwks`
+- `BETTER_AUTH_ISSUER` and `BETTER_AUTH_AUDIENCE` — the client's
+  `BETTER_AUTH_URL`
+- `FRONTEND_ORIGIN` — the deployed client origin, without a trailing slash
+- `NODE_ENV` — `production`
+
+Deploy the client first to obtain its Vercel URL, set that URL in the API
+variables, then redeploy the API. Set the API's Vercel URL as the client's
+`NEXT_PUBLIC_API_URL` before deploying or redeploying the client. MongoDB Atlas
+must allow connections from Vercel.
 
 ## Push as a separate GitHub repository
 
@@ -35,8 +54,8 @@ git branch -M main
 git push -u origin main
 ```
 
-The `.env` file and installed dependencies are ignored by Git. Keep real
-credentials out of the repository; share only `.env.example`.
+The `.env` file and installed dependencies are ignored by Git. Never commit
+real credentials.
 
 ## Routes
 

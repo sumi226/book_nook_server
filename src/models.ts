@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
 const bookSchema = new Schema(
   {
@@ -39,7 +39,12 @@ borrowSchema.index(
 borrowSchema.index({ userEmail: 1, borrowDate: -1 }, { name: "borrows_by_user" });
 borrowSchema.index({ bookId: 1, activeKey: 1 }, { name: "active_borrows_by_book" });
 
-export const Book =
-  mongoose.models.Book ?? mongoose.model("Book", bookSchema);
-export const Borrow =
-  mongoose.models.Borrow ?? mongoose.model("Borrow", borrowSchema);
+type BookRecord = InferSchemaType<typeof bookSchema>;
+type BorrowRecord = InferSchemaType<typeof borrowSchema>;
+
+export const Book: Model<BookRecord> =
+  (mongoose.models.Book as Model<BookRecord> | undefined) ??
+  mongoose.model<BookRecord>("Book", bookSchema);
+export const Borrow: Model<BorrowRecord> =
+  (mongoose.models.Borrow as Model<BorrowRecord> | undefined) ??
+  mongoose.model<BorrowRecord>("Borrow", borrowSchema);
